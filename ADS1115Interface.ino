@@ -19,7 +19,7 @@ const char* password = STAPSK;
 
 ESP8266WebServer server(80);
 ADS1115 adc0(ADS1115_DEFAULT_ADDRESS);
-static double o2_factor = 0.0;
+static double o2_factor = 1.53;
 double o2_opset = 0.0;
 double o2_val = 0.0;
 double o2_mv = 0.0;
@@ -56,9 +56,23 @@ void handleNotFound() {
 }
 
 void setup() {
+ 
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3c);
+//ssd1306_command(SSD1306_SEGREMAP | 0x1);
+  display.ssd1306_command(SSD1306_SEGREMAP);
 
+//ssd1306_command(SSD1306_COMSCANDEC);
+  display.ssd1306_command(SSD1306_COMSCANINC);
+  display.clearDisplay();   
+  display.setTextSize(1); 
+  display.setTextColor(WHITE);  
+  display.setCursor(0,0);   
+  display.println("Connecting WiFi...");
+  display.display();    
+  
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
+
 
   // Wait for connection
   while (WiFi.status() != WL_CONNECTED) {
@@ -66,7 +80,8 @@ void setup() {
     display.println("Not connected.");
   }
   
-  display.begin(SSD1306_SWITCHCAPVCC, 0x3c);
+
+  
   adc0.initialize(); // initialize ADS1115 16 bit A/D chip
   
   if(!adc0.testConnection()) display.println("ADS1115 connection failed");
@@ -93,21 +108,26 @@ void loop() {
   
   display.clearDisplay(); 
   display.setTextSize(1); 
-  display.setTextColor(WHITE);
+  display.setTextColor(WHITE);  
   display.setCursor(0,0); 
-  display.print("IP : ");
-  display.println(WiFi.localIP());
-
-  display.setCursor(0,10); 
-  display.print("Oxygen : ");
-  o2_val = (sensorOneCounts*adc0.getMvPerCount()*o2_factor)+o2_opset;
-  display.print(o2_val);
-  display.println(" %"); 
-  display.setCursor(0,20); 
-  display.print("Vout : ");
+  display.print("Oxygen:      ");
   o2_mv = sensorOneCounts*adc0.getMvPerCount();
   display.print(o2_mv);
-  display.println(" mV"); 
+  display.print(" mV");   
+  display.setCursor(0,9); 
+  display.setTextSize(2);   
+  o2_val = (sensorOneCounts*adc0.getMvPerCount()*o2_factor)+o2_opset;
+  if (o2_val >= 10) {
+    display.print("   ");     
+  } else {
+    display.print("    ");         
+  }
+  display.print(o2_val);
+  display.print(" %"); 
+  display.setCursor(0,25);
+  display.setTextSize(1);    
+  display.print("  IP : ");
+  display.print(WiFi.localIP());
   display.display();    
 
   delay(1000);
